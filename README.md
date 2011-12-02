@@ -1,6 +1,6 @@
 # Ruby port of Nyancat CLI
 
-A Ruby port of the original nyancat CLI by [Kevin Lange](https://github.com/klange/nyancat).
+A Ruby port of the original nyancat CLI by [Kevin Lange](https://github.com/klange/nyancat). Currently only supports xterm 256-color compatible terminals and lacks any finese or optimisation.
 
 ## Licenses, References, etc.
 
