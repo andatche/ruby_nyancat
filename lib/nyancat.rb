@@ -865,15 +865,19 @@ class NyanCat
     min_col = (max_col - term_width) / 2 if max_col > term_width
     max_col = min_col + term_width if max_col > term_width
     
+    frames = frames.map do |frame|
+      frame[min_row...max_row].map do |line|
+        line.chars.to_a[min_col...max_col].map do |c|
+          "%s%s" % [colours[c], output]
+        end.join + "\033[m\n"
+      end.join + "\033[H"
+    end
+
     printf("\033[H\033[2J\033[?25l")
     begin
-      while (true) do 
-        frames.each do |frame| 
-          frame[min_row..max_row-1].each do |line| 
-            line[min_col..max_col-1].each_char { |c| printf("%s%s", colours[c], output) }
-            printf("\033[m\n")
-          end
-          printf("\033[H")
+      loop do
+        frames.each do |frame|
+          print frame
           sleep(0.09)
         end
       end
