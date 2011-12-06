@@ -32,5 +32,10 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 #  WITH THE SOFTWARE.
 
+require 'yaml'
 require 'nyancat'
-NyanCat.nyancat()
+
+frames = YAML::load(IO.read('lib/nyancat/frames.yml'))
+palette = YAML::load(IO.read('lib/nyancat/palette.yml'))
+
+NyanCat.nyancat(frames, palette)
