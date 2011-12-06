@@ -35,7 +35,11 @@
 require 'yaml'
 require 'nyancat'
 
-frames = YAML::load(IO.read('lib/nyancat/frames.yml'))
-palette = YAML::load(IO.read('lib/nyancat/palette.yml'))
+begin
+  frames = YAML::load(IO.read('lib/nyancat/frames.yml'))
+  palette = YAML::load(IO.read('lib/nyancat/palette.yml'))
+rescue Exception => e
+  puts "Unable to read frames or palette YAML"
+end
 
 NyanCat.nyancat(frames, palette)
