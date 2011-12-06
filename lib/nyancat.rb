@@ -70,9 +70,10 @@ module NyanCat
         end
       end
     rescue SignalException => e
-      printf("\033[H\033[2J\033[?25l")
+      printf("\033c")
     rescue Exception => e
-      printf("\033[H\033[2J\033[?25l")
+      printf("\033c")
+      puts "Oops, something went wrong..."
       raise e
     end
   end
