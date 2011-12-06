@@ -38,7 +38,8 @@ module NyanCat
     
     # Get TTY size
     term_width, term_height = `stty size`.split.map { |x| x.to_i }.reverse
-    
+
+    # Calculate the width in terms of the output char
     term_width = term_width / OUTPUT_CHAR.length
     
     min_row = 0
@@ -61,6 +62,7 @@ module NyanCat
       end.join + "\033[H"
     end
 
+    start_time = Time.now
     printf("\033[H\033[2J\033[?25l")
     begin
       loop do
@@ -70,7 +72,8 @@ module NyanCat
         end
       end
     rescue SignalException => e
-      printf("\033c")
+      printf("\033c\033c")
+      printf("YOU NYANED FOR %4.2f SECONDS\n", Time.now - start_time)
     rescue Exception => e
       printf("\033c")
       puts "Oops, something went wrong..."
