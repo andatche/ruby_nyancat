@@ -32,16 +32,6 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 #  WITH THE SOFTWARE.
 
-require 'yaml'
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'nyancat'
-
-path = File.dirname(__FILE__)
-
-begin
-  frames = YAML::load(IO.read(path + '/../lib/nyancat/frames.yml'))
-  palette = YAML::load(IO.read(path + '/../lib/nyancat/palette.yml'))
-rescue Exception => e
-  puts "Unable to read frames or palette YAML"
-end
-
-NyanCat.nyancat(frames, palette)
+NyanCat.nyancat

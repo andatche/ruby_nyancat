@@ -30,30 +30,33 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 #  WITH THE SOFTWARE.
 
-module NyanCat
+require 'yaml'
 
+module NyanCat
   OUTPUT_CHAR = "  "
 
-  def self.nyancat(frames, palette)
-    
+  def self.nyancat(options = {})
+    frames  = options[:frames] || YAML.load_file(File.expand_path('../nyancat/frames.yml', __FILE__))
+    palette = options[:palette] || YAML.load_file(File.expand_path('../nyancat/palette.yml', __FILE__))
+
     # Get TTY size
     term_width, term_height = `stty size`.split.map { |x| x.to_i }.reverse
 
     # Calculate the width in terms of the output char
     term_width = term_width / OUTPUT_CHAR.length
-    
+
     min_row = 0
     max_row = frames[0].length
-    
+
     min_col = 0
     max_col = frames[0][0].length
-    
+
     min_row = (max_row - term_height) / 2 if max_row > term_height
     max_row = min_row + term_height if max_row > term_height
-    
+
     min_col = (max_col - term_width) / 2 if max_col > term_width
     max_col = min_col + term_width if max_col > term_width
-    
+
     frames = frames.map do |frame|
       frame[min_row...max_row].map do |line|
         line.chars.to_a[min_col...max_col].map do |c|
@@ -80,4 +83,4 @@ module NyanCat
       raise e
     end
   end
-end 
+end
