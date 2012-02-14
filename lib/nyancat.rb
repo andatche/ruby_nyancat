@@ -75,10 +75,10 @@ module NyanCat
         end
       end
     rescue SignalException => e
-      printf("\033c\033c")
+      printf("\033[0m\033c")
       printf("YOU NYANED FOR %4.2f SECONDS\n", Time.now - start_time)
     rescue Exception => e
-      printf("\033c")
+      printf("\033[0m\033c")
       puts "Oops, something went wrong..."
       raise e
     end
