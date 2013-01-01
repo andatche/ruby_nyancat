@@ -5,6 +5,10 @@ A Ruby port of the original nyancat CLI by [Kevin Lange](https://github.com/klan
     $ gem install nyancat
     $ nyancat
 
+For options, see --help
+
+    $ nyancat --help
+
 ## Audio 
 
 Very basic audio support is provided by using [mpg123](http://www.mpg123.de/). You'll need mpg123 installed and in your $PATH for audio to work.
