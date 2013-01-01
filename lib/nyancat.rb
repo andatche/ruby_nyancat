@@ -38,6 +38,8 @@ module NyanCat
   def self.nyancat(options = {})
     frames  = options[:frames] || YAML.load_file(File.expand_path('../nyancat/frames.yml', __FILE__))
     palette = options[:palette] || YAML.load_file(File.expand_path('../nyancat/palette.yml', __FILE__))
+    audio = options[:audio] || File.expand_path('../nyancat/nyan.mp3', __FILE__)
+    mute = options[:mute] || false
 
     # Get TTY size
     term_width, term_height = `stty size`.split.map { |x| x.to_i }.reverse
@@ -65,6 +67,8 @@ module NyanCat
       end.join + "\033[H"
     end
 
+    audio_thread = Thread.new { IO.popen("mpg123 -loop 0 -q #{audio} > /dev/null 2>&1") } unless mute
+    
     start_time = Time.now
     printf("\033[H\033[2J\033[?25l")
     begin

@@ -34,4 +34,15 @@
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'nyancat'
-NyanCat.nyancat
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: nyancat [options]"
+
+  opts.on("-s", "--silent", "Don't play audio") do |s|
+    options[:mute] = s
+  end
+end.parse!
+
+NyanCat.nyancat(options)
