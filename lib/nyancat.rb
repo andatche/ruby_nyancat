@@ -35,11 +35,17 @@ require 'yaml'
 module NyanCat
   OUTPUT_CHAR = "  "
 
+  def self.flavours
+    return Dir.entries(File.expand_path("../nyancat/", __FILE__)).select { |entry| !(entry =='.' || entry == '..') }
+  end
+
   def self.nyancat(options = {})
-    frames  = options[:frames] || YAML.load_file(File.expand_path('../nyancat/frames.yml', __FILE__))
-    palette = options[:palette] || YAML.load_file(File.expand_path('../nyancat/palette.yml', __FILE__))
-    audio = options[:audio] || File.expand_path('../nyancat/nyan.mp3', __FILE__)
+    flavour = options[:flavour] || 'original'
     mute = options[:mute] || false
+
+    frames  = YAML.load_file(File.expand_path("../nyancat/#{flavour}/frames.yml", __FILE__))
+    palette = YAML.load_file(File.expand_path("../nyancat/#{flavour}/palette.yml", __FILE__))
+    audio = File.expand_path("../nyancat/#{flavour}/audio.mp3", __FILE__)
 
     # Get TTY size
     term_width, term_height = `stty size`.split.map { |x| x.to_i }.reverse

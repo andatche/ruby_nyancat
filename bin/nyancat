@@ -43,6 +43,9 @@ OptionParser.new do |opts|
   opts.on("-s", "--silent", "Don't play audio") do |s|
     options[:mute] = s
   end
+  opts.on("-f", "--flavour FLAVOUR", "Available flavours: #{NyanCat.flavours.join(', ')}") do |f|
+    options[:flavour] = f
+  end
 end.parse!
 
 NyanCat.nyancat(options)
