@@ -35,6 +35,8 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'nyancat'
 require 'optparse'
+require 'gserver'
+require 'timeout'
 
 stdout = IO.new STDOUT.fileno
 
@@ -51,20 +53,48 @@ OptionParser.new do |opts|
   opts.on("-t", "--notime", "Don't show the time nyaned") do |t|
     options[:hide_time] = t
   end
+  opts.on("-l", "--listen [PORT]", "Run telnet server on PORT (default 21)") do |port|
+    options[:telnet] = true
+    options[:port] = port || 21
+  end
 end.parse!
 
-# Get TTY size
-options[:width], options[:height] = `stty size`.split.map { |x| x.to_i }.reverse
 
-begin
-  audio_thread = Thread.new { NyanCat.audio(options) } unless options[:mute]
-  NyanCat.nyancat(stdout, options)
-rescue SignalException => e
-  NyanCat.reset(stdout)
-rescue Exception => e
-  NyanCat.reset(stdout)
-  puts "Oops, something went wrong..."
-  raise e
+if options[:telnet]
+  class NyanServer < GServer
+    def serve(io)
+      # run the animation thread
+      nyanthread = Thread.new { NyanCat.nyancat(io) }
+
+      # wait for any input, then kill the animation
+      io.readline()
+      nyanthread.kill
+
+      # reset the terminal before closing
+      io.printf("\033[0m\033c")
+    end
+  end
+
+  # Start a new server listening on :port
+  server = NyanServer.new(options[:port],"::")
+  server.audit = true
+  server.start
+  server.join
+else
+  # Get TTY size
+  options[:width], options[:height] = `stty size`.split.map { |x| x.to_i }.reverse
+
+  begin
+    audio_thread = Thread.new { NyanCat.audio(options) } unless options[:mute]
+    NyanCat.nyancat(stdout, options)
+  rescue SignalException => e
+    NyanCat.reset(stdout)
+  rescue Exception => e
+    NyanCat.reset(stdout)
+    puts "Oops, something went wrong..."
+    raise e
+  end
 end
+
 
 
