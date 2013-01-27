@@ -55,7 +55,7 @@ OptionParser.new do |opts|
   end
   opts.on("-l", "--listen [PORT]", "Run telnet server on PORT (default 21)") do |port|
     options[:telnet] = true
-    options[:port] = port || 21
+    options[:port] = port || 23
   end
 end.parse!
 

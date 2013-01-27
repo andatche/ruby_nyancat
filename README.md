@@ -12,7 +12,7 @@ For options, see --help
     -s, --silent                     Don't play audio
     -f, --flavour FLAVOUR            Available flavours: original
     -t, --notime                     Don't show the time nyaned
-    -l, --listen [PORT]              Run telnet server on PORT (default 21)
+    -l, --listen [PORT]              Run telnet server on PORT (default 23)
 
 ## Audio 
 
@@ -24,7 +24,7 @@ If run with `-l` or `--listen` and an optional port argument, a simple socket se
 
 Clients can connect to the server with a telnet client, though only xterm 256-color compatible terminals are supported.
 
-	$ telnet nyan.andatche.com 21
+	$ telnet nyan.andatche.com 23
 
 ## Licenses, References, etc.
 
