@@ -36,6 +36,8 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'nyancat'
 require 'optparse'
 
+stdout = IO.new STDOUT.fileno
+
 options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: nyancat [options]"
@@ -46,6 +48,23 @@ OptionParser.new do |opts|
   opts.on("-f", "--flavour FLAVOUR", "Available flavours: #{NyanCat.flavours.join(', ')}") do |f|
     options[:flavour] = f
   end
+  opts.on("-t", "--notime", "Don't show the time nyaned") do |t|
+    options[:hide_time] = t
+  end
 end.parse!
 
-NyanCat.nyancat(options)
+# Get TTY size
+options[:width], options[:height] = `stty size`.split.map { |x| x.to_i }.reverse
+
+begin
+  audio_thread = Thread.new { NyanCat.audio(options) } unless options[:mute]
+  NyanCat.nyancat(stdout, options)
+rescue SignalException => e
+  NyanCat.reset(stdout)
+rescue Exception => e
+  NyanCat.reset(stdout)
+  puts "Oops, something went wrong..."
+  raise e
+end
+
+
