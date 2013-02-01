@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'nyancat'
-  s.version     = '0.1.0'
-  s.date        = '2013-01-01'
+  s.version     = '0.2.0'
+  s.date        = '2013-02-01'
   s.summary     = "nyancat on your terminal"
   s.description = "A Ruby port of Kevin Lange's nyancat"
   s.authors     = ["Ben Arblaster"]
