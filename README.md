@@ -11,8 +11,9 @@ For options, see --help
     Usage: nyancat [options]
     -s, --silent                     Don't play audio
     -f, --flavour FLAVOUR            Available flavours: original
-    -t, --notime                     Don't show the time nyaned
-    -l, --listen [PORT]              Run telnet server on PORT (default 23)
+    -n, --notime                     Don't show the time nyaned
+    -l, --listen [PORT]              Run telnet server on PORT (default 21)
+    -t, --timeout SECONDS            Timeout after SECONDS
 
 ## Audio 
 

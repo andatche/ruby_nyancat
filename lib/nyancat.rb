@@ -31,6 +31,8 @@
 #  WITH THE SOFTWARE.
 
 require 'yaml'
+require 'gserver'
+require 'timeout'
 
 module NyanCat
   OUTPUT_CHAR = "  "
@@ -39,73 +41,125 @@ module NyanCat
     return Dir.entries(File.expand_path("../nyancat/", __FILE__)).select { |entry| !(entry =='.' || entry == '..') }
   end
 
-  def self.nyancat(io, options = {})
-    term_width = options[:width] || 80
-    term_height = options[:height] || 24
-    flavour = options[:flavour] || 'original'
-    mute = options[:mute] || false
-    hide_time = options[:hide_time] || false
+  class NyanCat
+    def initialize(io, options)
+      @running = false
+      @io = io
+      @term_width = options[:width] || 80
+      @term_height = options[:height] || 24
+      @mute = options[:mute] || false
+      @hide_time = options[:hide_time] || false
 
-    frames  = YAML.load_file(File.expand_path("../nyancat/#{flavour}/frames.yml", __FILE__))
-    palette = YAML.load_file(File.expand_path("../nyancat/#{flavour}/palette.yml", __FILE__))
+      flavour = options[:flavour] || 'original'
+      frames  = YAML.load_file(File.expand_path("../nyancat/#{flavour}/frames.yml", __FILE__))
+      palette = YAML.load_file(File.expand_path("../nyancat/#{flavour}/palette.yml", __FILE__))
 
-    # Calculate the width in terms of the output char
-    term_width = term_width / OUTPUT_CHAR.length
+      @audio = File.expand_path("../nyancat/#{flavour}/audio.mp3", __FILE__) 
 
-    min_row = 0
-    max_row = frames[0].length
+      # Calculate the width in terms of the output char
+      term_width = @term_width / OUTPUT_CHAR.length
+      term_height = @term_height
 
-    min_col = 0
-    max_col = frames[0][0].length
+      min_row = 0
+      max_row = frames[0].length
 
-    min_row = (max_row - term_height) / 2 if max_row > term_height
-    max_row = min_row + term_height if max_row > term_height
+      min_col = 0
+      max_col = frames[0][0].length
 
-    min_col = (max_col - term_width) / 2 if max_col > term_width
-    max_col = min_col + term_width if max_col > term_width
+      min_row = (max_row - term_height) / 2 if max_row > term_height
+      max_row = min_row + term_height if max_row > term_height
 
-    frames = frames.map do |frame|
-      frame[min_row...max_row].map do |line|
-        line.chars.to_a[min_col...max_col].map do |c|
-          "\033[48;5;%dm%s" % [palette[c], OUTPUT_CHAR]
-        end.join + "\033[m\n"
+      min_col = (max_col - term_width) / 2 if max_col > term_width
+      max_col = min_col + term_width if max_col > term_width
+
+      # Calculate the final animation width
+      @anim_width = (max_col - min_col) * OUTPUT_CHAR.length
+
+      # Precompute frames
+      @frames = frames.map do |frame|
+        frame[min_row...max_row].map do |line|
+          line.chars.to_a[min_col...max_col].map do |c|
+            "\033[48;5;%dm%s" % [palette[c], OUTPUT_CHAR]
+          end.join + "\033[m\n"
+        end
       end
     end
-    
-    # Initialise term
-    io.printf("\033[H\033[2J\033[?25l")
 
-    # Get start time
-    start_time = Time.now()
+    def run()
+      @running = true
+      
+      begin
+        # Initialise term
+        @io.printf("\033[H\033[2J\033[?25l")
 
-    loop do
-      frames.each do |frame|
-        # Print the next frame
-        io.puts frame
+        # Get start time
+        start_time = Time.now()
 
-        # Print the time so far
-        unless hide_time
-          time = "You have nyaned for %0.0f seconds!" % [Time.now() - start_time]
-          time = time.center(term_width * OUTPUT_CHAR.length)
-          io.printf("\033[1;37;17m%s", time)
+        # Play audio
+        audio_t = Thread.new { IO.popen("mpg123 -loop 0 -q #{@audio} > /dev/null 2>&1") } unless @mute || nil
+
+        while @running
+          @frames.each do |frame|
+            # Print the next frame
+            @io.puts frame
+
+            # Print the time so far
+            unless @hide_time
+              time = "You have nyaned for %0.0f seconds!" % [Time.now() - start_time]
+              time = time.center(@anim_width)
+              @io.printf("\033[1;37;17m%s", time)
+            end
+
+            # Reset the frame and sleep
+            @io.printf("\033[H")
+            sleep(0.09)
+          end
         end
 
-        # Reset the frame and sleep
-        io.printf("\033[H")
-        sleep(0.09)
+      ensure
+        # Ensure the audio thread is killed, if it exists
+        audio_t.kill unless audio_t.nil?
+        stop
+        reset
+      end
+    end
+
+    def stop()
+      @running = false      
+    end
+
+    def reset()
+      begin
+        @io.puts("\033[0m\033c")
+      rescue Errno::EPIPE => e
+        # We failed to reset the TERM, IO stream is gone
       end
     end
   end
 
-  def self.reset(io)
-    io.printf("\033[0m\033c")
-  end
+  class NyanServer < GServer
+    def initialize(port, address, options = {})
+      @options = options
+      @options[:mute] = true
+      @timeout = @options[:timeout]
+      super(port, address)
+    end
 
-  def self.audio(options = {})
-    flavour = options[:flavour] || 'original'
-    audio = File.expand_path("../nyancat/#{flavour}/audio.mp3", __FILE__)
+    def serve(io)
+      n = NyanCat.new(io, @options)
+      begin    
+        # run the animation thread
+        t = Thread.new(n) { |nyan| nyan.run() }
 
-    IO.popen("mpg123 -loop 0 -q #{audio} > /dev/null 2>&1")
+        # block until any input is received or timeout is reached, then die
+        Timeout::timeout(@timeout) { io.readline() }
+      rescue Exception => e
+        log("Client error: #{e}")
+      ensure
+        n.stop
+        t.join
+      end
+    end
   end
 
 end
