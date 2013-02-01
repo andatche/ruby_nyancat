@@ -35,11 +35,9 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'nyancat'
 require 'optparse'
-require 'gserver'
-require 'timeout'
 
-stdout = IO.new STDOUT.fileno
-
+port = 23
+telnet = false
 options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: nyancat [options]"
@@ -50,47 +48,36 @@ OptionParser.new do |opts|
   opts.on("-f", "--flavour FLAVOUR", "Available flavours: #{NyanCat.flavours.join(', ')}") do |f|
     options[:flavour] = f
   end
-  opts.on("-t", "--notime", "Don't show the time nyaned") do |t|
-    options[:hide_time] = t
+  opts.on("-n", "--notime", "Don't show the time nyaned") do |n|
+    options[:hide_time] = n
   end
-  opts.on("-l", "--listen [PORT]", "Run telnet server on PORT (default 21)") do |port|
-    options[:telnet] = true
-    options[:port] = port || 23
+  opts.on("-l", "--listen [PORT]", "Run telnet server on PORT (default 21)") do |p|
+    telnet = true
+    port = p || 23
+  end
+  opts.on("-t", "--timeout SECONDS", "Timeout after SECONDS") do |t|
+    options[:timeout] = t.to_i
   end
 end.parse!
 
-
-if options[:telnet]
-  class NyanServer < GServer
-    def serve(io)
-      # run the animation thread
-      nyanthread = Thread.new { NyanCat.nyancat(io) }
-
-      # wait for any input, then kill the animation
-      io.readline()
-      nyanthread.kill
-
-      # reset the terminal before closing
-      io.printf("\033[0m\033c")
-    end
-  end
-
-  # Start a new server listening on :port
-  server = NyanServer.new(options[:port],"::")
+if telnet
+  # Start a new server listening on specified port
+  server = NyanCat::NyanServer.new(port, "::", options)
   server.audit = true
   server.start
   server.join
 else
+  stdout = IO.new STDOUT.fileno
+
   # Get TTY size
   options[:width], options[:height] = `stty size`.split.map { |x| x.to_i }.reverse
 
   begin
-    audio_thread = Thread.new { NyanCat.audio(options) } unless options[:mute]
-    NyanCat.nyancat(stdout, options)
+    n = NyanCat::NyanCat.new(stdout, options)
+    n.run
   rescue SignalException => e
-    NyanCat.reset(stdout)
+    # Do nothing, exit gracefully
   rescue Exception => e
-    NyanCat.reset(stdout)
     puts "Oops, something went wrong..."
     raise e
   end
