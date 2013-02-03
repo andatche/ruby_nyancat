@@ -61,11 +61,17 @@ OptionParser.new do |opts|
 end.parse!
 
 if telnet
-  # Start a new server listening on specified port
-  server = NyanCat::NyanServer.new(port, "::", options)
-  server.audit = true
-  server.start
-  server.join
+  begin
+    # Start a new server listening on specified port
+    server = NyanCat::NyanServer.new(port, "::", options)
+    server.audit = true
+    server.start
+    server.join
+  rescue SignalException => e
+    # Do nothing, exit gracefully
+  ensure
+    server.stop
+  end
 else
   stdout = IO.new STDOUT.fileno
 
