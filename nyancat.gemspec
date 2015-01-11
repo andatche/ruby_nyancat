@@ -9,4 +9,5 @@ Gem::Specification.new do |s|
   s.files       = ["lib/nyancat.rb"] + Dir["lib/nyancat/**/*"]
   s.executables << 'nyancat'
   s.homepage    = 'https://github.com/andatche/ruby_nyancat/'
+  s.add_dependency 'gserver'
 end
